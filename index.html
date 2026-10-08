@@ -62,6 +62,18 @@ button.tb.on { background: var(--accent2); border-color: var(--accent2); color: 
 button:disabled, select:disabled, input:disabled { opacity: .45; cursor: not-allowed; }
 
 #body { display: flex; flex: 1 1 auto; min-height: 0; }
+* { scrollbar-width: thin; scrollbar-color: rgba(41, 37, 53, .85) transparent; }
+@supports not (scrollbar-width: thin) {
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(41, 37, 53, .85); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #3A3550; background-clip: content-box; }
+}
+#projDockW { position: sticky; top: 0; height: 0; z-index: 25; }
+#projDock { display: none; position: absolute; left: 0; right: 0; top: 0; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); box-shadow: 0 8px 14px rgba(10, 10, 16, .55); }
+#projDock.show { display: block; }
+#projDock .chip { padding: 3px 9px; font-size: 12px; }
+#projDock .chip.hid { opacity: .5; }
 #sidebar { width: 340px; flex: 0 0 340px; overflow-y: auto; background: var(--panel);
   border-right: 1px solid var(--line); padding: 4px 0 20px; }
 details { border-bottom: 1px solid var(--line); }
@@ -83,10 +95,12 @@ summary:hover { color: var(--warn); }
 .sl label { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sl input[type=range] { width: 100%; accent-color: var(--accent); }
 .sl input[type=number] { width: 76px; padding: 2px 4px; }
+input[type=number] { color-scheme: dark; }
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; width: 14px; margin: 0; cursor: pointer; opacity: .35; transition: opacity .12s;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%238B93A3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6l3-3 3 3'/%3E%3Cpath d='M2 10l3 3 3-3'/%3E%3C/svg%3E") center / 10px 16px no-repeat; }
+input[type=number]:hover::-webkit-inner-spin-button, input[type=number]:focus::-webkit-inner-spin-button { opacity: 1; }
 .sl .lk { margin: 0; width: 16px; height: 16px; accent-color: var(--accent2); visibility: hidden; cursor: pointer; }
 .multi .sl .lk { visibility: visible; }
-#linkHint { display: none; }
-#poseBody.multi #linkHint { display: block; }
 
 #stage { position: relative; flex: 1 1 auto; min-width: 0; background: #050608; }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -148,6 +162,9 @@ input[type=range] { accent-color: var(--accent); }
   color: var(--dim); background: var(--panel); border-top: 1px solid var(--line); }
 #credit a { color: #E8407E; text-decoration: none; font-weight: 600; }
 #credit a:hover { text-decoration: underline; }
+#credit .sep, #credit .yr { color: #767E91; }
+#credit a.help { color: var(--warn); font-weight: 500; display: inline-flex; align-items: center; gap: 4px; vertical-align: bottom; }
+#credit a.help svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .chipw .pwr { border: 1px solid var(--line); border-right: 0; border-radius: 0; padding: 0 7px; display: flex; align-items: center; color: var(--dim); }
 .chipw .pwr svg { width: 16px; height: 16px; }
 .chipw .pwr.on { color: var(--text); }
@@ -171,6 +188,7 @@ input[type=range] { accent-color: var(--accent); }
 .row.icons button { flex: 1; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; position: relative; }
 .row.icons svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .row.icons .tip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: 220px; display: flex; flex-direction: column; gap: 2px; text-align: left; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 30; }
+.row.icons.sym button { flex: none; width: 38px; }
 .row.icons button:first-child .tip { left: 0; transform: none; }
 .row.icons button:last-child .tip { left: auto; right: 0; transform: none; }
 .row.icons .tip b { font-size: 12px; font-weight: 600; color: var(--text); }
@@ -200,6 +218,7 @@ input[type=range] { accent-color: var(--accent); }
 
   <div id="body">
     <aside id="sidebar">
+      <div id="projDockW"><div id="projDock" class="needs-model"><div id="projDockChips" class="chips"></div></div></div>
       <details open>
         <summary>Modelo</summary>
         <div class="sec">
@@ -280,20 +299,17 @@ input[type=range] { accent-color: var(--accent); }
             <div class="row"><span style="width:auto">Arrastrar en 3D</span>
               <div class="seg" id="gizmoSeg" style="flex:1"><button data-gz="translate" class="on" style="flex:1">Mover</button><button data-gz="rotate" style="flex:1">Rotar</button></div>
             </div>
-            <div class="hint" id="linkHint">Tocá la <b>cadena</b> de un valor para que sea <b>igual en todos los proyectores</b> (por ejemplo, la altura).</div>
-            <div class="hint" id="lockHint">El <b>candado</b> bloquea un valor: no cambia al arrastrar en 3D ni con la rueda.</div>
             <div class="sliders" id="poseSliders"></div>
             <div class="multi-only">
-              <label class="row"><span style="width:auto">Simetría</span>
-                <select id="symType" style="flex:1">
+              <div class="row icons sym"><span id="symLbl" style="width:auto">Simetría</span>
+                <select id="symType" name="symType" aria-labelledby="symLbl" style="flex:1;min-width:0">
                   <option value="mx">Espejo izquierda ↔ derecha</option>
                   <option value="mz">Espejo adelante ↔ atrás</option>
                   <option value="corners">4 esquinas (espejo en ambos)</option>
                   <option value="circle">Repartidos en círculo</option>
                 </select>
-              </label>
-              <div class="row"><button id="btnSym">Ubicar simétricos al proyector elegido</button></div>
-              <div class="hint">El proyector elegido queda como está; los que le siguen se ubican como su espejo (o en círculo), con el plano de simetría en el centro del modelo.</div>
+                <button id="btnSym" aria-label="Ubicar simétricos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20" stroke-dasharray="2 3"/><path d="M9 6 3 12l6 6z"/><path d="M15 6l6 6-6 6z"/></svg><span class="tip" aria-hidden="true"><b>Ubicar simétricos</b><i>El proyector elegido queda como está; los que le siguen se ubican como su espejo (o en círculo), con el plano de simetría en el centro del modelo.</i></span></button>
+              </div>
             </div>
           </div>
           <div class="row icons">
@@ -371,7 +387,7 @@ input[type=range] { accent-color: var(--accent); }
           <div id="expHintBlend" style="display:none"></div>
         </div>
       </details>
-      <div id="credit">Created by <a href="https://www.instagram.com/cherryhaze.png" target="_blank" rel="noopener noreferrer">Haze</a></div>
+      <div id="credit">Created by <a href="https://www.instagram.com/cherryhaze.png" target="_blank" rel="noopener noreferrer">Haze</a><span class="sep" aria-hidden="true"> · </span><span class="yr">2026</span><span class="sep" aria-hidden="true"> · </span><a class="help" href="https://github.com/cherryhaze-hub/videomapper" target="_blank" rel="noopener noreferrer" title="Guía de uso en GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8"/><path d="M12 17h.01"/></svg>Ayuda</a></div>
     </aside>
 
     <main id="stage">
@@ -5496,7 +5512,7 @@ ps.add(Jn.getHelper());
 Jn.attach(Hr);
 Jn.enabled = !1;
 Jn.getHelper().visible = !1;
-var hzLocks = new Set(),
+var hzLk = (p) => p.locks || (p.locks = new Set()),
   hzLockSnap = null,
   hzLockHit = new Set(),
   hzFovToast = 0;
@@ -5504,7 +5520,7 @@ Jn.addEventListener("dragging-changed", (s) => {
   if (s.value) {
     let p = Tt();
     ((hzLockSnap = {}), hzLockHit.clear());
-    p && hzLocks.forEach((k) => { k !== "fov" && k !== "lsx" && k !== "lsy" && (hzLockSnap[k] = ai[k].get(p)); });
+    p && hzLk(p).forEach((k) => { k !== "fov" && k !== "lsx" && k !== "lsy" && (hzLockSnap[k] = ai[k].get(p)); });
   } else {
     hzLockSnap = null;
     hzLockHit.size && (bt("Bloqueado con candado: " + [...hzLockHit].map((k) => ai[k].label.replace(/ \(.*\)/, "")).join(", "), "info"), hzLockHit.clear());
@@ -5823,7 +5839,6 @@ function d_() {
   return {
     sel: Ve.sel,
     links: [...Fn].sort(),
-    locks: [...hzLocks].sort(),
     aim: !!Ve.aim,
     projectors: Je.map((s) => ({
       uid: s.uid,
@@ -5835,6 +5850,7 @@ function d_() {
       spec: { ...s.spec },
       weight: s.weight,
       pattern: s.source.type === "pattern" ? s.source.pattern : "test",
+      locks: [...hzLk(s)].sort(),
     })),
   };
 }
@@ -5880,6 +5896,7 @@ function p_(s) {
         (r.initial = i.initial),
         (r.on = i.on),
         (r.hidden = !!i.hidden),
+        (r.locks = new Set(i.locks || [])),
         (r.flip = !1),
         l && l !== JSON.stringify(r.spec) && a.push(r),
         t.push({ p: r, e: i }));
@@ -5891,8 +5908,6 @@ function p_(s) {
       a.forEach((i) => i.source.type === "pattern" && !n.some((r) => r.p === i) && uo(i.source.pattern, i)),
       Fn.clear(),
       s.links.forEach((i) => Fn.add(i)),
-      hzLocks.clear(),
-      (s.locks || []).forEach((i) => hzLocks.add(i)),
       (Ve.aim = !!s.aim),
       (Ve.sel = Math.min(Math.max(0, s.sel), Je.length - 1)),
       Je.forEach((i) => Ed(i)),
@@ -6095,7 +6110,6 @@ async function S_() {
     model: { name: we.name, glb: await ST(we.buffer) },
     heightM: Ve.heightM,
     links: [...Fn],
-    locks: [...hzLocks],
     aim: !!Ve.aim,
     projectors: Je.map((s) => ({
       ...s.rig.toJSON(),
@@ -6105,6 +6119,7 @@ async function S_() {
       weight: s.weight,
       spec: { ...s.spec },
       pattern: s.source.type === "pattern" ? s.source.pattern : null,
+      locks: [...hzLk(s)],
     })),
     view: {
       mode: Ve.mode,
@@ -6166,15 +6181,12 @@ async function M_(s) {
         (n.hidden = !!t.hidden),
         (n.weight = Number.isFinite(+t.weight) ? Math.min(3, Math.max(0.1, +t.weight)) : 1),
         (n.flip = !!t.flip),
+        (n.locks = new Set((Array.isArray(t.locks) ? t.locks : []).filter((k) => ai[k]))),
         ["test", "bars", "anim", "edges"].includes(t.pattern) && uo(t.pattern, n));
     }),
     Fn.clear(),
     (Array.isArray(s.links) ? s.links : []).forEach((t) => {
       ai[t] && Fn.add(t);
-    }),
-    hzLocks.clear(),
-    (Array.isArray(s.locks) ? s.locks : []).forEach((t) => {
-      ai[t] && hzLocks.add(t);
     }),
     (Ve.aim = !!s.aim));
   let e = s.view || {};
@@ -6210,7 +6222,6 @@ async function Bl(s) {
           (Ve.sel = 0),
           (Ve.cover = !1),
           Fn.clear(),
-          hzLocks.clear(),
           (Ve.aim = !1),
           kl(),
           Gr("free"),
@@ -6286,7 +6297,7 @@ function wT(s) {
     "wheel",
     (e) => {
       if (!we || Ve.mode !== "calib") return;
-      if ((e.preventDefault(), hzLocks.has("fov"))) {
+      if ((e.preventDefault(), hzLk(Tt()).has("fov"))) {
         let n = performance.now();
         n - hzFovToast > 1500 && ((hzFovToast = n), bt("Bloqueado con candado: FOV vert.", "info"));
         return;
@@ -6342,12 +6353,12 @@ function kr(s, e, { min: t, max: n, step: i }) {
       (document.activeElement !== c && (c.value = p),
         document.activeElement !== l && (l.value = (+p).toFixed(r.digits)),
         (h.checked = Fn.has(e)),
-        (h2.checked = hzLocks.has(e)));
-      let dis = hzLocks.has(e) || (!!Ve.aim && (e === "yaw" || e === "pitch"));
+        (h2.checked = hzLk(Tt()).has(e)));
+      let dis = hzLk(Tt()).has(e) || (!!Ve.aim && (e === "yaw" || e === "pitch"));
       ((c.disabled = dis), (l.disabled = dis));
     },
     d = (p) => {
-      hzLocks.has(e) || (r.set(Tt(), p), zl());
+      hzLk(Tt()).has(e) || (r.set(Tt(), p), zl());
     };
   (c.addEventListener("input", () => {
     (d(parseFloat(c.value)), (l.value = (+c.value).toFixed(r.digits)));
@@ -6368,7 +6379,7 @@ function kr(s, e, { min: t, max: n, step: i }) {
         : (Fn.delete(e), Yn(), bt(`${r.label.replace(/ \(.*\)/, "")}: ya no est\xE1 enlazado`, "info"));
     }),
     h2.addEventListener("change", () => {
-      (h2.checked ? hzLocks.add(e) : hzLocks.delete(e), Td(), Yn(), bt(`${r.label.replace(/ \(.*\)/, "")}: ${h2.checked ? "bloqueado" : "desbloqueado"}`, h2.checked ? "ok" : "info"));
+      (h2.checked ? hzLk(Tt()).add(e) : hzLk(Tt()).delete(e), Td(), Yn(), bt(`${r.label.replace(/ \(.*\)/, "")}: ${h2.checked ? "bloqueado" : "desbloqueado"}`, h2.checked ? "ok" : "info"));
     }),
     l.addEventListener("change", () => Td()),
     a.append(o, c, l, h, h2),
@@ -6583,6 +6594,7 @@ function CT() {
         w.append(o, pb, i),
         s.append(w));
     }),
+    hzBuildDock(),
     (ue("btnAdd").disabled = Je.length >= oi),
     (ue("btnAdd").title = Je.length >= oi ? `M\xE1ximo ${oi} proyectores en esta GPU` : ""),
     (ue("btnDel").disabled = Je.length <= 1),
@@ -7034,6 +7046,7 @@ function kl(s = null, e = null) {
     Je.push(n),
     (n.initial = mT(Je.length - 1, n.spec, dir)),
     n.rig.set(s || n.initial),
+    !s && t && (n.locks = new Set(hzLk(t))),
     !s && t && (Fn.forEach((i) => i !== "x" && i !== "z" && ai[i].set(n, ai[i].get(t))), hzClamp(n), Ve.aim && hzAim(n), n.rig.apply()),
     Sm(),
     uo("test", n),
@@ -7179,7 +7192,7 @@ function P_(s) {
   Mt.setScissorTest(!0);
   for (let t of Object.values(Rn)) t.rect && DT(t);
   if ((Mt.setScissorTest(!1), UT(), NT(), s - r_ > 500)) {
-    r_ = s;
+    ((r_ = s), hzDockUpdate());
     let t = Tt(),
       n = t.meta,
       i = n.fps ? ` @ ${n.fps.toFixed(1)} fps` : "";
@@ -7199,6 +7212,33 @@ window.addEventListener("error", (s) => bt("Error: " + s.message, "err"));
 window.addEventListener("unhandledrejection", (s) =>
   bt("Error: " + (s.reason && s.reason.message ? s.reason.message : s.reason), "err"),
 );
+function hzBuildDock() {
+  let d = ue("projDockChips");
+  if (!d) return;
+  d.innerHTML = "";
+  Je.forEach((t, n) => {
+    let b = document.createElement("button");
+    ((b.className = "chip" + (n === Ve.sel ? " on" : "") + (t.hidden ? " hid" : "")),
+      (b.textContent = t.label),
+      (b.title = `${t.label} \xB7 ${t.meta.label || "Sin fuente"}`),
+      b.style.setProperty("--c", t.color),
+      b.addEventListener("click", () => Ad(n)),
+      d.append(b));
+  });
+  hzDockUpdate();
+}
+function hzDockUpdate() {
+  let sb = ue("sidebar"),
+    c = ue("projChips"),
+    d = ue("projDock");
+  if (!sb || !c || !d) return;
+  let ref = c.offsetParent ? c : c.closest("details").querySelector("summary"),
+    past = !document.body.classList.contains("nomodel") && ref.getBoundingClientRect().bottom < sb.getBoundingClientRect().top + 2;
+  d.classList.toggle("show", past);
+}
+ue("sidebar").addEventListener("scroll", hzDockUpdate, { passive: !0 });
+document.addEventListener("toggle", hzDockUpdate, !0);
+window.addEventListener("resize", hzDockUpdate);
 window.__app = {
   THREE: ro,
   renderBlendMask: v_,
